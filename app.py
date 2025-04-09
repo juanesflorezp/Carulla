@@ -2,15 +2,16 @@ from flask import Flask, request, render_template, send_file
 import pandas as pd
 import time
 import os
+from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from io import BytesIO
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -30,10 +31,18 @@ def index():
         df["Descripción_Carulla"] = None
         df["Precio_Carulla"] = None
 
-        # Selenium config
+        # Selenium config (modo headless + Chrome en Render)
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1920x1080')
+        options.binary_location = "/usr/bin/google-chrome"
+
         service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service)
-        driver.maximize_window()
+        driver = webdriver.Chrome(service=service, options=options)
+
         driver.get('https://www.carulla.com')
 
         for index, row in df.iterrows():
@@ -56,7 +65,7 @@ def index():
                 time.sleep(1)
 
                 WebDriverWait(driver, 22).until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/main/section[3]/div/div[2]/div[2]/div[2]/ul/li[1]/article/div[1]/div[2]/a/div/p'))
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/main/section[3]/div/div[2]/div[2]/div[2]/ul/li/article/div[1]/div[2]/a/div/p'))
                 )
                 time.sleep(1)
 
@@ -90,6 +99,6 @@ def index():
                          as_attachment=True)
 
     return render_template("index.html")
+
 if __name__ == "__main__":
     app.run(debug=True)
-
