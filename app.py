@@ -6,7 +6,6 @@ from io import BytesIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -31,7 +30,7 @@ def index():
         df["Descripción_Carulla"] = None
         df["Precio_Carulla"] = None
 
-        # Selenium config (modo headless + Chrome en Render)
+        # Configuración de Selenium (Chrome headless)
         options = Options()
         options.add_argument('--headless')
         options.add_argument('--disable-dev-shm-usage')
@@ -40,7 +39,7 @@ def index():
         options.add_argument('--window-size=1920x1080')
         options.binary_location = "/usr/bin/google-chrome"
 
-        service = Service(ChromeDriverManager().install())
+        service = Service("/usr/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
 
         driver.get('https://www.carulla.com')
