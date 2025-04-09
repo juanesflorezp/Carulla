@@ -39,8 +39,7 @@ def index():
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1920x1080')
-        chrome_path = shutil.which("google-chrome") or shutil.which("chrome") or "/opt/google/chrome/google-chrome"
-        options.binary_location = chrome_path
+        options.binary_location = "/usr/bin/google-chrome"
 
         # ✅ Usar webdriver-manager correctamente
         service = ChromeService(ChromeDriverManager().install())
