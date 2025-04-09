@@ -12,6 +12,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager  # ✅ esto es lo nuevo
+import shutil
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -38,8 +39,8 @@ def index():
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1920x1080')
-        options.binary_location = "/usr/bin/google-chrome"  # <- Asegura que Selenium use el Chrome que instalaste
-
+        chrome_path = shutil.which("google-chrome") or shutil.which("chrome") or "/opt/google/chrome/google-chrome"
+        options.binary_location = chrome_path
 
         # ✅ Usar webdriver-manager correctamente
         service = ChromeService(ChromeDriverManager().install())
