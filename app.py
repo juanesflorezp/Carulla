@@ -1,107 +1,75 @@
 from flask import Flask, request, render_template, send_file
-import pandas as pd
-import time
-import os
-from io import BytesIO
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
-import shutil
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         file = request.files["file"]
-        filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
-        df_original = pd.read_excel(filepath, usecols=[0, 1, 2, 3, 4, 5, 6],
-                                    names=["Descripción", "Cód. Barras", "Referencia", "CONSULTA", "NETO", "LINEA", "PROVEEDOR"],
-                                    skiprows=1)
-        df = df_original.copy()
-        df["Descripción_Carulla"] = None
-        df["Precio_Carulla"] = None
+        df = pd.read_excel(filepath)
 
-        # ✅ Configuración de Selenium (Chrome headless sin rutas fijas)
+        # Configurar Selenium con opciones para Render
         options = Options()
-        options.add_argument('--headless')
-        options.add_argument('--disable-dev-shm-usage')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-gpu')
-        options.add_argument('--window-size=1920x1080')
-        options.binary_location = "/opt/google/chrome/google-chrome"
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.binary_location = "/usr/bin/google-chrome"  # <-- Esta línea es clave
 
-
-        # ✅ Usar webdriver-manager correctamente
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
 
-        driver.get('https://www.carulla.com')
+        nombres = []
+        precios = []
 
-        for index, row in df.iterrows():
-            codigo_barras = str(row["Cód. Barras"]).strip()
-            print(f"🔍 Buscando código de barras: {codigo_barras}")
+        for codigo in df['codigo']:
+            url = f"https://www.carulla.com/s?q={codigo}"
+            driver.get(url)
+            driver.implicitly_wait(5)
 
             try:
-                search_field = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.XPATH, '//*[@id="__next"]/header/section/div/div[1]/div[2]/form/input'))
-                )
-                search_field.clear()
-                time.sleep(2)
+                nombre = driver.find_element("css selector", ".product__item__name").text
+                precio = driver.find_element("css selector", ".price__integer").text
+            except:
+                nombre = "No encontrado"
+                precio = "No encontrado"
 
-                for _ in range(21):
-                    search_field.send_keys(Keys.BACKSPACE)
-                    time.sleep(0.5)
-
-                search_field.send_keys(codigo_barras)
-                search_field.send_keys(Keys.ENTER)
-                time.sleep(1)
-
-                WebDriverWait(driver, 22).until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/main/section[3]/div/div[2]/div[2]/div[2]/ul/li/article/div[1]/div[2]/a/div/p'))
-                )
-                time.sleep(1)
-
-                name = driver.find_element(By.XPATH, '//*[@id="__next"]/main/section[3]/div/div[2]/div[2]/div[2]/ul/li/article/div[1]/div[2]/a/div/h3')
-                price = driver.find_element(By.XPATH, '//*[@id="__next"]/main/section[3]/div/div[2]/div[2]/div[2]/ul/li/article/div[1]/div[2]/div/div/div[2]/p')
-
-                df.at[index, "Descripción_Carulla"] = name.text
-                df.at[index, "Precio_Carulla"] = price.text
-                print(f"✅ Producto encontrado ({codigo_barras}): {name.text} | Precio: {price.text}")
-
-            except TimeoutException:
-                df.at[index, "Descripción_Carulla"] = "No encontrado"
-                df.at[index, "Precio_Carulla"] = "No encontrado"
-                print(f"❌ No se encontró el código de barras: {codigo_barras}")
-
-            except Exception as e:
-                df.at[index, "Descripción_Carulla"] = "Error"
-                df.at[index, "Precio_Carulla"] = "Error"
-                print(f"⚠️ Error al buscar '{codigo_barras}': {str(e)}")
-
-            time.sleep(2)
+            nombres.append(nombre)
+            precios.append(precio)
 
         driver.quit()
 
-        output = BytesIO()
-        df.to_excel(output, index=False)
-        output.seek(0)
+        df['nombre'] = nombres
+        df['precio'] = precios
+        output_path = os.path.join(app.config['UPLOAD_FOLDER'], "resultado.xlsx")
+        df.to_excel(output_path, index=False)
 
-        return send_file(output,
-                         download_name="resultado_carulla.xlsx",
-                         as_attachment=True)
+        return send_file(output_path, as_attachment=True)
 
-    return render_template("index.html")
+    return '''
+        <html>
+            <body>
+                <h2>Sube tu archivo Excel con códigos</h2>
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file">
+                    <input type="submit">
+                </form>
+            </body>
+        </html>
+    '''
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=10000)
