@@ -1,8 +1,6 @@
-Flask==3.1.0
-requests==2.32.3
-beautifulsoup4==4.13.3
-openpyxl==3.1.2
-gunicorn==21.2.0
-pandas==2.2.2
-selenium==4.20.0
-webdriver-manager==4.0.1
+Flask
+selenium
+webdriver-manager
+pandas
+openpyxl
+gunicorn
