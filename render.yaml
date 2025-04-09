@@ -2,5 +2,11 @@ services:
   - type: web
     name: carulla
     env: python
-    buildCommand: "./build.sh && pip install -r requirements.txt"
+    buildCommand: "./build.sh"
     startCommand: "gunicorn app:app"
+    buildFilter:
+      paths:
+        - build.sh
+        - requirements.txt
+        - app.py
+        - render.yaml
