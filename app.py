@@ -27,7 +27,7 @@ def index():
         options.add_argument("--headless")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.binary_location = "/usr/bin/google-chrome"  # <-- Esta línea es clave
+        options.binary_location = "/usr/bin/google-chrome"
 
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
