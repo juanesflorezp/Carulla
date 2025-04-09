@@ -35,3 +35,5 @@ echo "✅ Google Chrome:"
 google-chrome --version
 echo "✅ ChromeDriver:"
 /usr/bin/chromedriver --version
+which google-chrome
+ls -l /opt/google/chrome
