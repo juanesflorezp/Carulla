@@ -4,14 +4,14 @@ import time
 import os
 from io import BytesIO
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager  # ✅ esto es lo nuevo
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
 import shutil
 
 app = Flask(__name__)
@@ -43,7 +43,7 @@ def index():
 
 
         # ✅ Usar webdriver-manager correctamente
-        service = ChromeService(executable_path="/usr/bin/chromedriver")
+        service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
 
         driver.get('https://www.carulla.com')
