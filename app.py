@@ -43,7 +43,7 @@ def index():
 
 
         # ✅ Usar webdriver-manager correctamente
-        service = ChromeService(ChromeDriverManager().install())
+        service = ChromeService(executable_path="/usr/bin/chromedriver")
         driver = webdriver.Chrome(service=service, options=options)
 
         driver.get('https://www.carulla.com')
